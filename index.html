@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oscar Picks 2026</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Oscar Picks 2026</h1>
+        <p class="subtitle">98th Academy Awards &mdash; March 15, 2026</p>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab active" data-tab="picks">Make Picks</button>
+        <button class="tab" data-tab="results">Results</button>
+    </nav>
+
+    <main>
+        <section id="picks-tab" class="tab-content active">
+            <div class="name-input-area">
+                <label for="player-name">Your Name</label>
+                <input type="text" id="player-name" placeholder="Enter your name" autocomplete="off">
+            </div>
+
+            <div id="lockout-banner" class="banner hidden">
+                Picks are locked! The ceremony has begun.
+            </div>
+
+            <div id="categories-list"></div>
+
+            <div class="submit-area">
+                <button id="submit-picks" class="btn-primary">Submit Picks</button>
+                <div id="submit-status" class="status-msg"></div>
+                <div id="pick-count" class="pick-count"></div>
+            </div>
+        </section>
+
+        <section id="results-tab" class="tab-content">
+            <div id="results-loading" class="loading">Loading results...</div>
+
+            <div id="leaderboard-section" class="results-section hidden">
+                <h2>Leaderboard</h2>
+                <canvas id="leaderboard-chart"></canvas>
+            </div>
+
+            <div id="picks-table-section" class="results-section hidden">
+                <h2>Everyone's Picks</h2>
+                <div id="picks-table-wrapper" class="table-wrapper"></div>
+            </div>
+
+            <div id="consensus-section" class="results-section hidden">
+                <h2>Most Popular Picks</h2>
+                <canvas id="consensus-chart"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <script src="nominees.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

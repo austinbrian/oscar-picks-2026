@@ -1,0 +1,383 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0d0d0d;
+    color: #e0e0e0;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+header {
+    text-align: center;
+    padding: 24px 0 8px;
+}
+
+header h1 {
+    font-size: 2rem;
+    color: #d4af37;
+    letter-spacing: 1px;
+}
+
+.subtitle {
+    color: #888;
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 0;
+    margin: 20px 0;
+    border-bottom: 2px solid #333;
+}
+
+.tab {
+    flex: 1;
+    padding: 12px;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1rem;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.tab:hover {
+    color: #ccc;
+}
+
+.tab.active {
+    color: #d4af37;
+    border-bottom-color: #d4af37;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Name input */
+.name-input-area {
+    margin-bottom: 20px;
+}
+
+.name-input-area label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #ccc;
+}
+
+.name-input-area input {
+    width: 100%;
+    max-width: 300px;
+    padding: 10px 12px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    font-size: 1rem;
+}
+
+.name-input-area input:focus {
+    outline: none;
+    border-color: #d4af37;
+}
+
+/* Banner */
+.banner {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    text-align: center;
+}
+
+#lockout-banner {
+    background: #3d1c1c;
+    color: #ff6b6b;
+    border: 1px solid #5c2a2a;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Category cards */
+.category-card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.category-header {
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+
+.category-header:hover {
+    background: #222;
+}
+
+.category-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.category-pick {
+    font-size: 0.8rem;
+    color: #d4af37;
+    max-width: 50%;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.category-chevron {
+    color: #666;
+    transition: transform 0.2s;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.category-card.open .category-chevron {
+    transform: rotate(180deg);
+}
+
+.category-body {
+    display: none;
+    padding: 0 16px 14px;
+}
+
+.category-card.open .category-body {
+    display: block;
+}
+
+/* Radio options */
+.nominee-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    margin: 4px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.nominee-option:hover {
+    background: #252525;
+}
+
+.nominee-option input[type="radio"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #555;
+    border-radius: 50%;
+    margin-right: 10px;
+    flex-shrink: 0;
+    position: relative;
+    cursor: pointer;
+}
+
+.nominee-option input[type="radio"]:checked {
+    border-color: #d4af37;
+}
+
+.nominee-option input[type="radio"]:checked::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 8px;
+    height: 8px;
+    background: #d4af37;
+    border-radius: 50%;
+}
+
+.nominee-label {
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+/* Submit area */
+.submit-area {
+    padding: 20px 0;
+    text-align: center;
+}
+
+.btn-primary {
+    padding: 12px 32px;
+    background: #d4af37;
+    color: #0d0d0d;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: #e6c44a;
+}
+
+.btn-primary:disabled {
+    background: #555;
+    color: #888;
+    cursor: not-allowed;
+}
+
+.status-msg {
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.status-msg.success {
+    color: #4caf50;
+}
+
+.status-msg.error {
+    color: #ff6b6b;
+}
+
+.pick-count {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+/* Results */
+.results-section {
+    margin-bottom: 32px;
+}
+
+.results-section h2 {
+    color: #d4af37;
+    margin-bottom: 16px;
+    font-size: 1.3rem;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+}
+
+/* Table */
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.picks-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    min-width: 600px;
+}
+
+.picks-table th,
+.picks-table td {
+    padding: 8px 10px;
+    border: 1px solid #2a2a2a;
+    text-align: left;
+}
+
+.picks-table th {
+    background: #1a1a1a;
+    color: #d4af37;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+.picks-table th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #1a1a1a;
+}
+
+.picks-table td:first-child {
+    position: sticky;
+    left: 0;
+    background: #0d0d0d;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.picks-table tr:nth-child(even) td {
+    background: #141414;
+}
+
+.picks-table tr:nth-child(even) td:first-child {
+    background: #141414;
+}
+
+.pick-correct {
+    background: #1a3a1a !important;
+    color: #4caf50;
+}
+
+.pick-wrong {
+    color: #888;
+}
+
+.winner-badge {
+    display: inline-block;
+    background: #d4af37;
+    color: #0d0d0d;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: 4px;
+}
+
+/* Charts */
+canvas {
+    max-height: 400px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .category-header {
+        padding: 12px;
+    }
+
+    .picks-table {
+        font-size: 0.7rem;
+    }
+
+    .picks-table th,
+    .picks-table td {
+        padding: 6px;
+    }
+}
