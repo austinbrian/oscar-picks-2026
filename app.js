@@ -104,7 +104,7 @@ function renderCategories() {
 
 		const currentPick = currentPicks[key] || '';
 		const pickDisplay = currentPick
-			? `<span class="category-pick">${currentPick}</span>`
+			? `<span class="category-pick">${escapeHtml(currentPick)}</span>`
 			: '';
 
 		card.innerHTML = `
@@ -118,7 +118,7 @@ function renderCategories() {
             <div class="category-body">
                 ${cat.nominees.map((nom, i) => `
                     <label class="nominee-option">
-                        <input type="radio" name="${key}" value="${nom}"
+                        <input type="radio" name="${key}" value="${escapeHtml(nom)}"
                             ${currentPick === nom ? 'checked' : ''}
                             ${isLocked() ? 'disabled' : ''}>
                         <span class="nominee-label">${nom}</span>
@@ -459,5 +459,5 @@ function chartOptions(label) {
 function escapeHtml(string_) {
 	const div = document.createElement('div');
 	div.textContent = string_;
-	return div.innerHTML;
+	return div.innerHTML.replaceAll('"', '&quot;');
 }
