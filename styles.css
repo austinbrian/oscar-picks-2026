@@ -144,11 +144,13 @@ header h1 {
 .category-pick {
     font-size: 0.8rem;
     color: #d4af37;
-    max-width: 50%;
     text-align: right;
-    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-left: 12px;
 }
 
 .category-chevron {

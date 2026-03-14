@@ -104,7 +104,7 @@ function renderCategories() {
 
 		const currentPick = currentPicks[key] || '';
 		const pickDisplay = currentPick
-			? `<span class="category-pick">${truncate(currentPick, 30)}</span>`
+			? `<span class="category-pick">${currentPick}</span>`
 			: '';
 
 		card.innerHTML = `
@@ -155,7 +155,7 @@ function updatePickDisplay(card, key) {
 			card.querySelector('.category-header div').prepend(pickSpan);
 		}
 
-		pickSpan.textContent = truncate(pick, 30);
+		pickSpan.textContent = pick;
 	} else if (pickSpan) {
 		pickSpan.remove();
 	}
