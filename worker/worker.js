@@ -64,7 +64,8 @@ export default {
                 }
 
                 const votes = await readJson(env.OSCAR_BUCKET, "votes.json");
-                votes[name.trim()] = picks;
+                const key = name.trim();
+                votes[key] = { ...votes[key], ...picks };
                 await writeJson(env.OSCAR_BUCKET, "votes.json", votes);
 
                 return jsonResponse({ ok: true });
