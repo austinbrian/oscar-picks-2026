@@ -41,6 +41,16 @@
         <section id="results-tab" class="tab-content">
             <div id="results-loading" class="loading">Loading results...</div>
 
+            <div id="scorecard-section" class="results-section hidden">
+                <h2>Your Scorecard</h2>
+                <div id="scorecard-content"></div>
+            </div>
+
+            <div id="score-tracker-section" class="results-section hidden">
+                <h2>Score Tracker</h2>
+                <canvas id="score-tracker-chart"></canvas>
+            </div>
+
             <div id="leaderboard-section" class="results-section hidden">
                 <h2>Leaderboard</h2>
                 <canvas id="leaderboard-chart"></canvas>
@@ -51,9 +61,24 @@
                 <div id="picks-table-wrapper" class="table-wrapper"></div>
             </div>
 
+            <div id="accuracy-section" class="results-section hidden">
+                <h2>Category Accuracy</h2>
+                <canvas id="accuracy-chart"></canvas>
+            </div>
+
             <div id="consensus-section" class="results-section hidden">
                 <h2>Most Popular Picks</h2>
                 <canvas id="consensus-chart"></canvas>
+            </div>
+
+            <div id="h2h-section" class="results-section hidden">
+                <h2>Head to Head</h2>
+                <div class="h2h-controls">
+                    <select id="h2h-player1"><option value="">Select Player 1</option></select>
+                    <span class="h2h-vs">vs</span>
+                    <select id="h2h-player2"><option value="">Select Player 2</option></select>
+                </div>
+                <div id="h2h-content"></div>
             </div>
         </section>
     </main>

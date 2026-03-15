@@ -5,6 +5,7 @@ const LOCKOUT_TIME = new Date('2026-03-15T19:00:00-04:00').getTime();
 let currentPicks = {};
 let allVotes = {};
 let winners = {};
+const isAdmin = new URLSearchParams(window.location.search).has('admin');
 
 // --- DOM refs ---
 const picksTab = document.querySelector('#picks-tab');
@@ -24,6 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	setupSubmit();
 	checkLockout();
 	updatePickCount();
+	if (!isLocked() && !isAdmin) {
+		document.querySelector('[data-tab="results"]').classList.add('hidden');
+	}
 });
 
 // --- Tabs ---
@@ -103,8 +107,15 @@ function renderCategories() {
 		card.dataset.category = key;
 
 		const currentPick = currentPicks[key] || '';
+		const winner = winners[key];
+		let indicatorHtml = '';
+		if (currentPick && winner) {
+			indicatorHtml = currentPick === winner
+				? '<span class="pick-indicator correct">&#10003;</span>'
+				: '<span class="pick-indicator wrong">&#10007;</span>';
+		}
 		const pickDisplay = currentPick
-			? `<span class="category-pick">${escapeHtml(currentPick)}</span>`
+			? `${indicatorHtml}<span class="category-pick">${escapeHtml(currentPick)}</span>`
 			: '';
 
 		card.innerHTML = `
@@ -158,6 +169,28 @@ function updatePickDisplay(card, key) {
 		pickSpan.textContent = pick;
 	} else if (pickSpan) {
 		pickSpan.remove();
+	}
+}
+
+function refreshPickIndicators() {
+	for (const card of categoriesList.querySelectorAll('.category-card')) {
+		const key = card.dataset.category;
+		const pick = currentPicks[key];
+		const winner = winners[key];
+		const headerDiv = card.querySelector('.category-header div');
+
+		let indicator = card.querySelector('.pick-indicator');
+		if (pick && winner) {
+			const isCorrect = pick === winner;
+			if (!indicator) {
+				indicator = document.createElement('span');
+				headerDiv.prepend(indicator);
+			}
+			indicator.className = `pick-indicator ${isCorrect ? 'correct' : 'wrong'}`;
+			indicator.innerHTML = isCorrect ? '&#10003;' : '&#10007;';
+		} else if (indicator) {
+			indicator.remove();
+		}
 	}
 }
 
@@ -240,9 +273,14 @@ async function loadResults() {
 		winners = await winnersResp.json();
 
 		loading.classList.add('hidden');
+		renderScorecard();
+		renderScoreTracker();
 		renderResultsTable();
 		renderLeaderboard();
+		renderCategoryAccuracy();
 		renderConsensus();
+		renderH2HSection();
+		refreshPickIndicators();
 
 		document.querySelector('#leaderboard-section').classList.remove('hidden');
 		document.querySelector('#picks-table-section').classList.remove('hidden');
@@ -265,8 +303,13 @@ async function pollWinners() {
 		const newWinners = await resp.json();
 		if (JSON.stringify(newWinners) !== JSON.stringify(winners)) {
 			winners = newWinners;
+			renderScorecard();
+			renderScoreTracker();
 			renderResultsTable();
 			renderLeaderboard();
+			renderCategoryAccuracy();
+			renderConsensus();
+			refreshPickIndicators();
 		}
 	} catch {
 		// Silently retry next interval
@@ -367,6 +410,11 @@ function renderLeaderboard() {
 		leaderboardChart.destroy();
 	}
 
+	const barColors = sorted.map((_, i) => {
+		const alpha = 1 - (i / Math.max(sorted.length, 1)) * 0.6;
+		return `rgba(212, 175, 55, ${alpha})`;
+	});
+
 	leaderboardChart = new Chart(ctx, {
 		type: 'bar',
 		data: {
@@ -374,7 +422,7 @@ function renderLeaderboard() {
 			datasets: [{
 				label: 'Correct Picks',
 				data: sorted.map(s => s.score),
-				backgroundColor: '#d4af37',
+				backgroundColor: barColors,
 			}],
 		},
 		options: chartOptions('Correct Picks'),
@@ -417,6 +465,10 @@ function renderConsensus() {
 		consensusChart.destroy();
 	}
 
+	const conColors = data.map(v =>
+		v >= 70 ? '#d4af37' : v >= 40 ? '#6a5acd' : '#444'
+	);
+
 	consensusChart = new Chart(ctx, {
 		type: 'bar',
 		data: {
@@ -424,7 +476,7 @@ function renderConsensus() {
 			datasets: [{
 				label: 'Consensus %',
 				data,
-				backgroundColor: '#6a5acd',
+				backgroundColor: conColors,
 			}],
 		},
 		options: {
@@ -434,12 +486,324 @@ function renderConsensus() {
 	});
 }
 
+// --- Scorecard ---
+function renderScorecard() {
+	const section = document.querySelector('#scorecard-section');
+	const content = document.querySelector('#scorecard-content');
+	const name = playerNameInput.value.trim();
+	const picks = allVotes[name] || currentPicks;
+
+	if (!name || Object.keys(picks).length === 0) {
+		content.innerHTML = '<p style="color:#888;">Submit your picks to see your scorecard.</p>';
+		section.classList.remove('hidden');
+		return;
+	}
+
+	const sc = getPlayerScorecard(picks);
+	const announced = sc.correct.length + sc.wrong.length;
+	const total = announced + sc.pending.length;
+
+	const correctPct = total > 0 ? (sc.correct.length / total) * 100 : 0;
+	const wrongPct = total > 0 ? (sc.wrong.length / total) * 100 : 0;
+	const pendingPct = total > 0 ? (sc.pending.length / total) * 100 : 0;
+
+	let html = `
+		<div class="scorecard-summary">
+			<div>
+				<div class="scorecard-score">${sc.score}${announced > 0 ? ` / ${announced}` : ''}</div>
+				<div class="scorecard-score-label">${announced > 0 ? 'correct' : 'no winners yet'}${sc.pending.length > 0 ? ` &middot; ${sc.pending.length} pending` : ''}</div>
+			</div>
+		</div>
+		<div class="scorecard-progress">
+			<div class="correct" style="width:${correctPct}%"></div>
+			<div class="wrong" style="width:${wrongPct}%"></div>
+			<div class="pending" style="width:${pendingPct}%"></div>
+		</div>
+	`;
+
+	if (sc.correct.length > 0) {
+		html += '<div class="scorecard-list"><h3 style="color:#4caf50;">Got Right</h3>';
+		for (const key of sc.correct) {
+			html += `<div class="scorecard-item correct"><strong>${NOMINEES[key].label}</strong> &mdash; ${escapeHtml(picks[key])}</div>`;
+		}
+		html += '</div>';
+	}
+
+	if (sc.wrong.length > 0) {
+		html += '<div class="scorecard-list"><h3 style="color:#ff6b6b;">Got Wrong</h3>';
+		for (const key of sc.wrong) {
+			html += `<div class="scorecard-item wrong"><strong>${NOMINEES[key].label}</strong> &mdash; ${escapeHtml(picks[key])}</div>`;
+		}
+		html += '</div>';
+	}
+
+	content.innerHTML = html;
+	section.classList.remove('hidden');
+}
+
+// --- Score Tracker ---
+let scoreTrackerChart = null;
+
+function renderScoreTracker() {
+	const section = document.querySelector('#score-tracker-section');
+	const announcedKeys = Object.keys(NOMINEES).filter(k => winners[k]);
+
+	if (announcedKeys.length === 0) {
+		section.classList.add('hidden');
+		return;
+	}
+
+	const players = Object.keys(allVotes).sort();
+	const currentName = playerNameInput.value.trim();
+
+	const datasets = players.map((player, i) => {
+		let cumulative = 0;
+		const data = announcedKeys.map(key => {
+			if (allVotes[player]?.[key] === winners[key]) {
+				cumulative++;
+			}
+			return cumulative;
+		});
+
+		const isCurrentUser = player === currentName;
+		const color = isCurrentUser ? '#d4af37' : PLAYER_COLORS[i % PLAYER_COLORS.length];
+
+		return {
+			label: player,
+			data,
+			borderColor: color,
+			backgroundColor: color,
+			tension: 0.3,
+			pointRadius: 4,
+			borderWidth: isCurrentUser ? 3 : 2,
+		};
+	});
+
+	const canvas = document.querySelector('#score-tracker-chart');
+	const ctx = canvas.getContext('2d');
+
+	if (scoreTrackerChart) {
+		scoreTrackerChart.destroy();
+	}
+
+	scoreTrackerChart = new Chart(ctx, {
+		type: 'line',
+		data: {
+			labels: announcedKeys.map(k => NOMINEES[k].label),
+			datasets,
+		},
+		options: {
+			...chartOptions('Score'),
+			plugins: {
+				legend: {display: true, labels: {color: '#aaa'}},
+				tooltip: {
+					backgroundColor: '#1a1a1a',
+					titleColor: '#d4af37',
+					bodyColor: '#e0e0e0',
+					borderColor: '#333',
+					borderWidth: 1,
+				},
+			},
+			scales: {
+				x: {
+					ticks: {color: '#aaa', maxRotation: 45, font: {size: 10}},
+					grid: {color: '#222'},
+				},
+				y: {
+					ticks: {color: '#aaa', stepSize: 1},
+					grid: {color: '#222'},
+					beginAtZero: true,
+				},
+			},
+			animation: {duration: 800, easing: 'easeOutQuart'},
+		},
+	});
+
+	section.classList.remove('hidden');
+}
+
+// --- Category Accuracy ---
+let accuracyChart = null;
+
+function renderCategoryAccuracy() {
+	const section = document.querySelector('#accuracy-section');
+	const announcedKeys = Object.keys(NOMINEES).filter(k => winners[k]);
+
+	if (announcedKeys.length === 0) {
+		section.classList.add('hidden');
+		return;
+	}
+
+	const players = Object.keys(allVotes);
+	const labels = [];
+	const data = [];
+
+	for (const key of announcedKeys) {
+		const correctCount = players.filter(p => allVotes[p]?.[key] === winners[key]).length;
+		labels.push(NOMINEES[key].label);
+		data.push(Math.round((correctCount / players.length) * 100));
+	}
+
+	const bgColors = data.map(v =>
+		v >= 60 ? '#4caf50' : v >= 30 ? '#ff9800' : '#ff6b6b'
+	);
+
+	const canvas = document.querySelector('#accuracy-chart');
+	const ctx = canvas.getContext('2d');
+
+	if (accuracyChart) {
+		accuracyChart.destroy();
+	}
+
+	accuracyChart = new Chart(ctx, {
+		type: 'bar',
+		data: {
+			labels,
+			datasets: [{
+				label: 'Accuracy %',
+				data,
+				backgroundColor: bgColors,
+			}],
+		},
+		options: {
+			...chartOptions('Accuracy %'),
+			indexAxis: 'y',
+			animation: {duration: 800, easing: 'easeOutQuart'},
+		},
+	});
+
+	section.classList.remove('hidden');
+}
+
+// --- Head to Head ---
+function renderH2HSection() {
+	const section = document.querySelector('#h2h-section');
+	const players = Object.keys(allVotes).sort();
+
+	if (players.length < 2) {
+		section.classList.add('hidden');
+		return;
+	}
+
+	const select1 = document.querySelector('#h2h-player1');
+	const select2 = document.querySelector('#h2h-player2');
+	const currentName = playerNameInput.value.trim();
+
+	// Only populate if empty (avoid resetting user selection)
+	if (select1.options.length <= 1) {
+		for (const p of players) {
+			select1.add(new Option(p, p));
+			select2.add(new Option(p, p));
+		}
+		if (players.includes(currentName)) {
+			select1.value = currentName;
+		}
+		select1.addEventListener('change', renderH2HComparison);
+		select2.addEventListener('change', renderH2HComparison);
+	}
+
+	section.classList.remove('hidden');
+	renderH2HComparison();
+}
+
+function renderH2HComparison() {
+	const content = document.querySelector('#h2h-content');
+	const p1 = document.querySelector('#h2h-player1').value;
+	const p2 = document.querySelector('#h2h-player2').value;
+
+	if (!p1 || !p2) {
+		content.innerHTML = '<p style="color:#888;">Select two players to compare.</p>';
+		return;
+	}
+
+	if (p1 === p2) {
+		content.innerHTML = '<p style="color:#888;">Select two different players.</p>';
+		return;
+	}
+
+	const picks1 = allVotes[p1] || {};
+	const picks2 = allVotes[p2] || {};
+	const categoryKeys = Object.keys(NOMINEES);
+
+	let agreed = 0;
+	let p1Score = 0;
+	let p2Score = 0;
+	const announced = Object.keys(winners).length;
+
+	for (const key of categoryKeys) {
+		if (picks1[key] && picks1[key] === picks2[key]) agreed++;
+		if (winners[key]) {
+			if (picks1[key] === winners[key]) p1Score++;
+			if (picks2[key] === winners[key]) p2Score++;
+		}
+	}
+
+	let html = `
+		<div class="h2h-stats">
+			<div class="h2h-stat">
+				<div class="h2h-stat-value">${agreed}</div>
+				<div class="h2h-stat-label">Agree</div>
+			</div>
+			${announced > 0 ? `
+				<div class="h2h-stat">
+					<div class="h2h-stat-value">${p1Score}</div>
+					<div class="h2h-stat-label">${escapeHtml(p1)}</div>
+				</div>
+				<div class="h2h-stat">
+					<div class="h2h-stat-value">${p2Score}</div>
+					<div class="h2h-stat-label">${escapeHtml(p2)}</div>
+				</div>
+			` : ''}
+		</div>
+		<div class="table-wrapper">
+		<table class="h2h-table">
+			<thead><tr>
+				<th>Category</th>
+				<th>${escapeHtml(p1)}</th>
+				<th>${escapeHtml(p2)}</th>
+			</tr></thead>
+			<tbody>
+	`;
+
+	for (const key of categoryKeys) {
+		const pick1 = picks1[key] || '—';
+		const pick2 = picks2[key] || '—';
+		const winner = winners[key];
+		const match = pick1 === pick2 && pick1 !== '—';
+
+		let cls1 = '';
+		let cls2 = '';
+		if (winner) {
+			cls1 = pick1 === winner ? 'pick-correct' : 'pick-wrong';
+			cls2 = pick2 === winner ? 'pick-correct' : 'pick-wrong';
+		}
+
+		const rowCls = match ? ' class="h2h-agree"' : '';
+		html += `<tr${rowCls}>
+			<td>${NOMINEES[key].label}${winner ? ` <span class="winner-badge">W</span>` : ''}</td>
+			<td class="${cls1}">${escapeHtml(pick1)}</td>
+			<td class="${cls2}">${escapeHtml(pick2)}</td>
+		</tr>`;
+	}
+
+	html += '</tbody></table></div>';
+	content.innerHTML = html;
+}
+
 // --- Chart Helpers ---
 function chartOptions(label) {
 	return {
 		responsive: true,
+		animation: {duration: 800, easing: 'easeOutQuart'},
 		plugins: {
 			legend: {display: false},
+			tooltip: {
+				backgroundColor: '#1a1a1a',
+				titleColor: '#d4af37',
+				bodyColor: '#e0e0e0',
+				borderColor: '#333',
+				borderWidth: 1,
+			},
 		},
 		scales: {
 			x: {
@@ -456,8 +820,28 @@ function chartOptions(label) {
 }
 
 // --- Utils ---
+const PLAYER_COLORS = ['#d4af37', '#6a5acd', '#4caf50', '#ff6b6b', '#00bcd4', '#ff9800', '#e91e63', '#8bc34a'];
+
 function escapeHtml(string_) {
 	const div = document.createElement('div');
 	div.textContent = string_;
 	return div.innerHTML.replaceAll('"', '&quot;');
+}
+
+function getPlayerScorecard(playerPicks) {
+	const categoryKeys = Object.keys(NOMINEES);
+	const result = {score: 0, correct: [], wrong: [], pending: []};
+	for (const key of categoryKeys) {
+		const pick = playerPicks?.[key];
+		if (!pick) continue;
+		if (!winners[key]) {
+			result.pending.push(key);
+		} else if (pick === winners[key]) {
+			result.correct.push(key);
+			result.score++;
+		} else {
+			result.wrong.push(key);
+		}
+	}
+	return result;
 }
