@@ -25,9 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	setupSubmit();
 	checkLockout();
 	updatePickCount();
-	if (!isLocked() && !isAdmin) {
-		document.querySelector('[data-tab="results"]').classList.add('hidden');
-	}
+	// Results tab always visible
 });
 
 // --- Tabs ---
