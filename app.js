@@ -491,7 +491,8 @@ function renderScorecard() {
 	const section = document.querySelector('#scorecard-section');
 	const content = document.querySelector('#scorecard-content');
 	const name = playerNameInput.value.trim();
-	const picks = allVotes[name] || currentPicks;
+	const match = findPlayerPicks(name);
+	const picks = match?.picks || currentPicks;
 
 	if (!name || Object.keys(picks).length === 0) {
 		content.innerHTML = '<p style="color:#888;">Submit your picks to see your scorecard.</p>';
@@ -554,7 +555,7 @@ function renderScoreTracker() {
 	}
 
 	const players = Object.keys(allVotes).sort();
-	const currentName = playerNameInput.value.trim();
+	const currentNormalized = normalizeKey(playerNameInput.value);
 
 	const datasets = players.map((player, i) => {
 		let cumulative = 0;
@@ -565,7 +566,7 @@ function renderScoreTracker() {
 			return cumulative;
 		});
 
-		const isCurrentUser = player === currentName;
+		const isCurrentUser = normalizeKey(player) === currentNormalized;
 		const color = isCurrentUser ? '#d4af37' : PLAYER_COLORS[i % PLAYER_COLORS.length];
 
 		return {
@@ -695,8 +696,9 @@ function renderH2HSection() {
 			select1.add(new Option(p, p));
 			select2.add(new Option(p, p));
 		}
-		if (players.includes(currentName)) {
-			select1.value = currentName;
+		const match = findPlayerPicks(currentName);
+		if (match) {
+			select1.value = match.player;
 		}
 		select1.addEventListener('change', renderH2HComparison);
 		select2.addEventListener('change', renderH2HComparison);
@@ -821,6 +823,18 @@ function chartOptions(label) {
 
 // --- Utils ---
 const PLAYER_COLORS = ['#d4af37', '#6a5acd', '#4caf50', '#ff6b6b', '#00bcd4', '#ff9800', '#e91e63', '#8bc34a'];
+
+function normalizeKey(name) {
+	return name.trim().toLowerCase().replace(/[\u{0080}-\u{FFFF}]/gu, '').replace(/\s+/g, ' ').trim();
+}
+
+function findPlayerPicks(name) {
+	const key = normalizeKey(name);
+	for (const [player, picks] of Object.entries(allVotes)) {
+		if (normalizeKey(player) === key) return {player, picks};
+	}
+	return null;
+}
 
 function escapeHtml(string_) {
 	const div = document.createElement('div');

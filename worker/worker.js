@@ -23,6 +23,10 @@ async function readJson(bucket, key) {
     return obj.json();
 }
 
+function normalizeKey(name) {
+    return name.trim().toLowerCase().replace(/[\u{0080}-\u{FFFF}]/gu, '').replace(/\s+/g, ' ').trim();
+}
+
 async function writeJson(bucket, key, data) {
     await bucket.put(key, JSON.stringify(data), {
         httpMetadata: { contentType: "application/json" }
@@ -41,9 +45,20 @@ export default {
 
         try {
             // GET /votes — return all votes
+            // Internal format: { normalizedKey: { displayName, picks } }
+            // Returns: { displayName: picks } for frontend compatibility
             if (path === "/votes" && request.method === "GET") {
                 const votes = await readJson(env.OSCAR_BUCKET, "votes.json");
-                return jsonResponse(votes);
+                const result = {};
+                for (const [key, value] of Object.entries(votes)) {
+                    if (value && value.displayName && value.picks) {
+                        result[value.displayName] = value.picks;
+                    } else {
+                        // Legacy format: key is display name, value is picks directly
+                        result[key] = value;
+                    }
+                }
+                return jsonResponse(result);
             }
 
             // POST /vote — submit or update a person's picks
@@ -64,8 +79,15 @@ export default {
                 }
 
                 const votes = await readJson(env.OSCAR_BUCKET, "votes.json");
-                const key = name.trim();
-                votes[key] = { ...votes[key], ...picks };
+                const key = normalizeKey(name);
+                const existing = votes[key];
+                const existingPicks = existing?.picks || existing || {};
+                // If existing entry is legacy format (no displayName wrapper), treat it as picks
+                const isLegacy = existing && !existing.displayName;
+                votes[key] = {
+                    displayName: name.trim(),
+                    picks: { ...(isLegacy ? existing : existingPicks), ...picks },
+                };
                 await writeJson(env.OSCAR_BUCKET, "votes.json", votes);
 
                 return jsonResponse({ ok: true });
