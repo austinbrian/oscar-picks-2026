@@ -2,6 +2,9 @@ name = "oscar-picks-api"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
+[triggers]
+crons = ["*/3 * * * *"]
+
 [[r2_buckets]]
 binding = "OSCAR_BUCKET"
 bucket_name = "oscar-picks"
