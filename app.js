@@ -105,10 +105,9 @@ function renderCategories() {
 		card.dataset.category = key;
 
 		const currentPick = currentPicks[key] || '';
-		const winner = winners[key];
 		let indicatorHtml = '';
-		if (currentPick && winner) {
-			indicatorHtml = currentPick === winner
+		if (currentPick && hasWinner(key)) {
+			indicatorHtml = isWinner(key, currentPick)
 				? '<span class="pick-indicator correct">&#10003;</span>'
 				: '<span class="pick-indicator wrong">&#10007;</span>';
 		}
@@ -174,12 +173,11 @@ function refreshPickIndicators() {
 	for (const card of categoriesList.querySelectorAll('.category-card')) {
 		const key = card.dataset.category;
 		const pick = currentPicks[key];
-		const winner = winners[key];
 		const headerDiv = card.querySelector('.category-header div');
 
 		let indicator = card.querySelector('.pick-indicator');
-		if (pick && winner) {
-			const isCorrect = pick === winner;
+		if (pick && hasWinner(key)) {
+			const isCorrect = isWinner(key, pick);
 			if (!indicator) {
 				indicator = document.createElement('span');
 				headerDiv.prepend(indicator);
@@ -334,14 +332,14 @@ function renderResultsTable() {
 
 	for (const key of categoryKeys) {
 		const cat = NOMINEES[key];
-		const winner = winners[key];
-		html += `<tr><td>${cat.label}${winner ? ` <span class="winner-badge">W: ${truncate(winner, 20)}</span>` : ''}</td>`;
+		const winnerDisplay = hasWinner(key) ? (Array.isArray(winners[key]) ? winners[key].map(w => truncate(w, 20)).join(' / ') : truncate(winners[key], 20)) : '';
+		html += `<tr><td>${cat.label}${winnerDisplay ? ` <span class="winner-badge">W: ${winnerDisplay}</span>` : ''}</td>`;
 
 		for (const player of players) {
 			const pick = allVotes[player]?.[key] || '—';
 			let cls = '';
-			if (winner) {
-				cls = pick === winner ? 'pick-correct' : 'pick-wrong';
+			if (hasWinner(key)) {
+				cls = isWinner(key, pick) ? 'pick-correct' : 'pick-wrong';
 			}
 
 			html += `<td class="${cls}">${escapeHtml(truncate(pick, 25))}</td>`;
@@ -359,7 +357,7 @@ let leaderboardChart = null;
 
 function renderLeaderboard() {
 	const players = Object.keys(allVotes).sort();
-	const winnerKeys = Object.keys(winners);
+	const winnerKeys = Object.keys(winners).filter(k => hasWinner(k));
 
 	if (winnerKeys.length === 0 && players.length > 0) {
 		// No winners yet — show pick counts instead
@@ -389,7 +387,7 @@ function renderLeaderboard() {
 	const scores = players.map(player => {
 		let correct = 0;
 		for (const key of winnerKeys) {
-			if (allVotes[player]?.[key] === winners[key]) {
+			if (isWinner(key, allVotes[player]?.[key])) {
 				correct++;
 			}
 		}
@@ -545,7 +543,7 @@ let scoreTrackerChart = null;
 
 function renderScoreTracker() {
 	const section = document.querySelector('#score-tracker-section');
-	const announcedKeys = Object.keys(NOMINEES).filter(k => winners[k]);
+	const announcedKeys = Object.keys(NOMINEES).filter(k => hasWinner(k));
 
 	if (announcedKeys.length === 0) {
 		section.classList.add('hidden');
@@ -558,7 +556,7 @@ function renderScoreTracker() {
 	const datasets = players.map((player, i) => {
 		let cumulative = 0;
 		const data = announcedKeys.map(key => {
-			if (allVotes[player]?.[key] === winners[key]) {
+			if (isWinner(key, allVotes[player]?.[key])) {
 				cumulative++;
 			}
 			return cumulative;
@@ -626,7 +624,7 @@ let accuracyChart = null;
 
 function renderCategoryAccuracy() {
 	const section = document.querySelector('#accuracy-section');
-	const announcedKeys = Object.keys(NOMINEES).filter(k => winners[k]);
+	const announcedKeys = Object.keys(NOMINEES).filter(k => hasWinner(k));
 
 	if (announcedKeys.length === 0) {
 		section.classList.add('hidden');
@@ -638,7 +636,7 @@ function renderCategoryAccuracy() {
 	const data = [];
 
 	for (const key of announcedKeys) {
-		const correctCount = players.filter(p => allVotes[p]?.[key] === winners[key]).length;
+		const correctCount = players.filter(p => isWinner(key, allVotes[p]?.[key])).length;
 		labels.push(NOMINEES[key].label);
 		data.push(Math.round((correctCount / players.length) * 100));
 	}
@@ -728,13 +726,13 @@ function renderH2HComparison() {
 	let agreed = 0;
 	let p1Score = 0;
 	let p2Score = 0;
-	const announced = Object.keys(winners).length;
+	const announced = Object.keys(winners).filter(k => hasWinner(k)).length;
 
 	for (const key of categoryKeys) {
 		if (picks1[key] && picks1[key] === picks2[key]) agreed++;
-		if (winners[key]) {
-			if (picks1[key] === winners[key]) p1Score++;
-			if (picks2[key] === winners[key]) p2Score++;
+		if (hasWinner(key)) {
+			if (isWinner(key, picks1[key])) p1Score++;
+			if (isWinner(key, picks2[key])) p2Score++;
 		}
 	}
 
@@ -768,19 +766,19 @@ function renderH2HComparison() {
 	for (const key of categoryKeys) {
 		const pick1 = picks1[key] || '—';
 		const pick2 = picks2[key] || '—';
-		const winner = winners[key];
 		const match = pick1 === pick2 && pick1 !== '—';
+		const announced = hasWinner(key);
 
 		let cls1 = '';
 		let cls2 = '';
-		if (winner) {
-			cls1 = pick1 === winner ? 'pick-correct' : 'pick-wrong';
-			cls2 = pick2 === winner ? 'pick-correct' : 'pick-wrong';
+		if (announced) {
+			cls1 = isWinner(key, pick1) ? 'pick-correct' : 'pick-wrong';
+			cls2 = isWinner(key, pick2) ? 'pick-correct' : 'pick-wrong';
 		}
 
 		const rowCls = match ? ' class="h2h-agree"' : '';
 		html += `<tr${rowCls}>
-			<td>${NOMINEES[key].label}${winner ? ` <span class="winner-badge">W</span>` : ''}</td>
+			<td>${NOMINEES[key].label}${announced ? ` <span class="winner-badge">W</span>` : ''}</td>
 			<td class="${cls1}">${escapeHtml(pick1)}</td>
 			<td class="${cls2}">${escapeHtml(pick2)}</td>
 		</tr>`;
@@ -840,15 +838,28 @@ function escapeHtml(string_) {
 	return div.innerHTML.replaceAll('"', '&quot;');
 }
 
+function isWinner(category, pick) {
+	const w = winners[category];
+	if (!w) return false;
+	if (Array.isArray(w)) return w.includes(pick);
+	return pick === w;
+}
+
+function hasWinner(category) {
+	const w = winners[category];
+	if (Array.isArray(w)) return w.length > 0;
+	return !!w;
+}
+
 function getPlayerScorecard(playerPicks) {
 	const categoryKeys = Object.keys(NOMINEES);
 	const result = {score: 0, correct: [], wrong: [], pending: []};
 	for (const key of categoryKeys) {
 		const pick = playerPicks?.[key];
 		if (!pick) continue;
-		if (!winners[key]) {
+		if (!hasWinner(key)) {
 			result.pending.push(key);
-		} else if (pick === winners[key]) {
+		} else if (isWinner(key, pick)) {
 			result.correct.push(key);
 			result.score++;
 		} else {

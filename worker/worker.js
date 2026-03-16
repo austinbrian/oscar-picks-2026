@@ -99,16 +99,15 @@ function stripWikiMarkup(text) {
         .trim();
 }
 
-function extractWinnerFromSection(lines) {
+function extractWinnersFromSection(lines) {
+    const found = [];
     for (const line of lines) {
         if (!line.startsWith('*')) continue;
-        // Winner is bolded: '''...''' (may also have italic '' for film titles)
-        // Check for triple-quote bold markers
         if (/'{3}/.test(line)) {
-            return stripWikiMarkup(line.replace(/^\*\s*/, ''));
+            found.push(stripWikiMarkup(line.replace(/^\*\s*/, '')));
         }
     }
-    return null;
+    return found;
 }
 
 function norm(s) {
@@ -210,14 +209,16 @@ function parseWikitext(wikitext) {
         const key = WIKI_TO_KEY[section.name];
         if (!key) continue;
 
-        const winnerText = extractWinnerFromSection(lines);
-        if (!winnerText) continue;
+        const winnerTexts = extractWinnersFromSection(lines);
+        if (winnerTexts.length === 0) continue;
 
         const nominees = NOMINEE_DATA[key];
         if (!nominees) continue;
 
-        const matched = fuzzyMatch(winnerText, nominees);
-        if (matched) {
+        const matched = winnerTexts.map(wt => fuzzyMatch(wt, nominees)).filter(Boolean);
+        if (matched.length === 1) {
+            results[key] = matched[0];
+        } else if (matched.length > 1) {
             results[key] = matched;
         }
     }
