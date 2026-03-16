@@ -846,7 +846,7 @@ function chartOptions(label) {
 }
 
 // --- Utils ---
-const PLAYER_COLORS = ['#d4af37', '#6a5acd', '#4caf50', '#ff6b6b', '#00bcd4', '#ff9800', '#e91e63', '#8bc34a'];
+const PLAYER_COLORS = ['#6a5acd', '#4caf50', '#ff6b6b', '#00bcd4', '#ff9800', '#e91e63', '#8bc34a', '#42a5f5', '#ab47bc'];
 
 function normalizeKey(name) {
 	return name.trim().toLowerCase().replace(/[\u{0080}-\u{FFFF}]/gu, '').replace(/\s+/g, ' ').trim();
