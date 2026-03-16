@@ -541,9 +541,37 @@ function renderScorecard() {
 // --- Score Tracker ---
 let scoreTrackerChart = null;
 
+// 98th Academy Awards ceremony presentation order
+const CEREMONY_ORDER = [
+	'best_supporting_actress',
+	'best_animated_feature',
+	'best_animated_short',
+	'best_costume_design',
+	'best_makeup_hairstyling',
+	'best_casting',
+	'best_live_action_short',
+	'best_supporting_actor',
+	'best_adapted_screenplay',
+	'best_original_screenplay',
+	'best_production_design',
+	'best_visual_effects',
+	'best_documentary_short',
+	'best_documentary_feature',
+	'best_original_score',
+	'best_sound',
+	'best_film_editing',
+	'best_cinematography',
+	'best_international_feature',
+	'best_original_song',
+	'best_director',
+	'best_actor',
+	'best_actress',
+	'best_picture',
+];
+
 function renderScoreTracker() {
 	const section = document.querySelector('#score-tracker-section');
-	const announcedKeys = Object.keys(NOMINEES).filter(k => hasWinner(k));
+	const announcedKeys = CEREMONY_ORDER.filter(k => hasWinner(k));
 
 	if (announcedKeys.length === 0) {
 		section.classList.add('hidden');
