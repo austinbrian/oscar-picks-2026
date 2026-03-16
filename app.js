@@ -465,7 +465,6 @@ function renderConsensus() {
 		v >= 70 ? '#d4af37' : v >= 40 ? '#6a5acd' : '#444'
 	);
 
-	canvas.style.height = `${labels.length * 24 + 40}px`;
 	consensusChart = new Chart(ctx, {
 		type: 'bar',
 		data: {
@@ -479,7 +478,6 @@ function renderConsensus() {
 		options: {
 			...chartOptions('Consensus %'),
 			indexAxis: 'y',
-			maintainAspectRatio: false,
 		},
 	});
 }
@@ -682,7 +680,6 @@ function renderCategoryAccuracy() {
 		accuracyChart.destroy();
 	}
 
-	canvas.style.height = `${labels.length * 24 + 40}px`;
 	accuracyChart = new Chart(ctx, {
 		type: 'bar',
 		data: {
@@ -696,7 +693,6 @@ function renderCategoryAccuracy() {
 		options: {
 			...chartOptions('Accuracy %'),
 			indexAxis: 'y',
-			maintainAspectRatio: false,
 			animation: {duration: 800, easing: 'easeOutQuart'},
 		},
 	});
