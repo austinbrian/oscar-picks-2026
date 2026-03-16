@@ -478,6 +478,7 @@ function renderConsensus() {
 		options: {
 			...chartOptions('Consensus %'),
 			indexAxis: 'y',
+			aspectRatio: 0.8,
 		},
 	});
 }
@@ -693,6 +694,7 @@ function renderCategoryAccuracy() {
 		options: {
 			...chartOptions('Accuracy %'),
 			indexAxis: 'y',
+			aspectRatio: 0.8,
 			animation: {duration: 800, easing: 'easeOutQuart'},
 		},
 	});
