@@ -515,7 +515,7 @@ canvas {
 
 #consensus-chart,
 #accuracy-chart {
-    max-height: 700px;
+    max-height: none;
 }
 
 /* Responsive */
